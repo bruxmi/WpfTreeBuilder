@@ -9,75 +9,41 @@ namespace TreeBuilder
 {
     public class TreeBuilderService
     {
-        public ObservableCollection<TreeItem> BuildTree(List<Data> treeData)
-        {
-            var roots = new ObservableCollection<TreeItem>();
-
-            foreach (var groupKategorie in treeData.GroupBy(a => a.Kategorie))
-            {
-                var kategorie = new TreeItem { Bezeichnung = groupKategorie.Key };
-                foreach (var groupKundenart in groupKategorie.GroupBy(a => a.Kundenart))
-                {
-                    var kundenart = new TreeItem { Bezeichnung = groupKundenart.Key };
-                    foreach (var groupSparte in groupKundenart.GroupBy(a => a.Sparte))
-                    {
-                        var sparte = new TreeItem { Bezeichnung = groupSparte.Key };
-                        foreach (var groupStatus in groupSparte.GroupBy(a => a.Status))
-                        {
-                            var status = new TreeItem { Bezeichnung = groupStatus.Key };
-                            foreach (var item in groupStatus)
-                            {
-                                status.Children.Add(new TreeItem { Bezeichnung = item.Bezeichnung });
-                            }
-                            sparte.Children.Add(status);
-                        }
-                        kundenart.Children.Add(sparte);
-                    }
-                    kategorie.Children.Add(kundenart);
-                }
-                roots.Add(kategorie);
-            }
-
-            return roots;
-        }
-
         public ObservableCollection<TreeItem> BuildTree(List<Data> treeData, List<string> propertyNames)
         {
             var roots = new ObservableCollection<TreeItem>();
-            var count = 0;
+            var itemsToGroup = treeData.ToList();
 
-            var toOrder = treeData.ToList();
-
-            while (count != propertyNames.Count)
+            foreach (var grouping in GroupByPropertyName(itemsToGroup, propertyNames.First()))
             {
-                foreach (var propertyName in propertyNames)
-                {
-                    var grouping = GroupByPropertyName(toOrder, propertyName);
-                    foreach (var groupedList in grouping)
-                    {
-                        var treeItem = new TreeItem { Bezeichnung = groupedList.Key };
-                    }
-                }
+                var parent = new TreeItem { Bezeichnung = grouping.Key };
+                var newPropertyNames = propertyNames.Except(new List<string> { propertyNames.First() }).ToList();
+                var children = OrganizeTree(newPropertyNames, grouping.ToList(), newPropertyNames.First(), parent, false);
+                parent.Children.Add(children);
+                roots.Add(parent);
             }
-
 
             return roots;
         }
 
-        public ObservableCollection<TreeItem> DoSomething(List<Data> source, List<string> propertyNames)
+        private TreeItem OrganizeTree(List<string> propertyNames, List<Data> itemsToGroup, string propertyName, TreeItem parent, bool isLastGrouping)
         {
-            var tmpSource = source.ToList();
-            var firstPropertyName = propertyNames.First();
-            var treeItems = new ObservableCollection<TreeItem>();
-
-            return treeItems;
-        }
-
-        private TreeItem AddChildrenToParent(TreeItem parent, List<TreeItem> children)
-        {
-            foreach (var item in children)
+            foreach (var grouping in GroupByPropertyName(itemsToGroup, propertyName))
             {
-                parent.Children.Add(item);
+                var treeItem = new TreeItem { Bezeichnung = grouping.Key };
+                if (isLastGrouping)
+                {
+                    foreach (var item in grouping)
+                    {
+                        treeItem.Children.Add(new TreeItem { Bezeichnung = item.Bezeichnung });
+                    }
+                    parent.Children.Add(treeItem);
+                }
+                else
+                {
+                    var newPropertyNames = propertyNames.Except(new List<string> { propertyName }).ToList();
+                    return OrganizeTree(newPropertyNames, grouping.ToList(), newPropertyNames.First(), treeItem, newPropertyNames.Count == 1);
+                }
             }
             return parent;
         }

@@ -12,7 +12,6 @@ namespace TreeBuilder
     {
         public TreeViewModel()
         {
-            //this.TreeItems = new ObservableCollection<TreeItem>();
             this.LoadTreeCommand = new DelegateCommand(a => LoadTree());
         }
 
@@ -22,9 +21,7 @@ namespace TreeBuilder
             var dataProvider = new DataProvider();
             var treeData = dataProvider.GetData();
             var treeBuilder = new TreeBuilderService();
-            //var tree = treeBuilder.BuildTree(treeData);
-
-            var tree = treeBuilder.DoSomething(treeData, new List<string> { "Kategorie", "Kundenart", "Sparte", "Status"});
+            var tree = treeBuilder.BuildTree(treeData, new List<string> { "Kategorie", "Kundenart", "Sparte", "Status"});
             foreach (var item in tree)
             {
                 this.TreeItems.Add(item);
